@@ -1,0 +1,44 @@
+version: '3.9'
+services:
+  neo4j:
+    image: neo4j:5.14
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/test
+    volumes:
+      - neo4j-data:/data
+
+  ingestion:
+    build: ./services/ingestion
+    depends_on:
+      - neo4j
+
+  dedup:
+    build: ./services/dedup
+    depends_on:
+      - ingestion
+
+  writer:
+    build: ./services/writer
+    depends_on:
+      - dedup
+      - neo4j
+
+  query-api:
+    build: ./services/query-api
+    ports:
+      - "5000:5000"
+    depends_on:
+      - neo4j
+
+  frontend:
+    build: ./services/frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - query-api
+
+volumes:
+  neo4j-data:
